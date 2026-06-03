@@ -132,11 +132,23 @@ class NavigateTool extends BaseBrowserToolExecutor {
       // Build robust match patterns from the provided URL.
       // This mirrors the approach in CloseTabsTool: ensure wildcard path and
       // add common variants (www/no-www, http/https) to handle real-world redirects.
-      const buildUrlPatterns = (input: string): string[] => {
+      const isChromeTabQueryPatternUrl = (u: URL): boolean => {
+        if (u.protocol === 'file:') return true;
+        return ['http:', 'https:', 'ftp:'].includes(u.protocol) && !!u.host;
+      };
+
+      const buildUrlPatterns = (input: string): string[] | undefined => {
         const patterns = new Set<string>();
         try {
           if (!input.includes('*')) {
             const u = new URL(input);
+            if (!isChromeTabQueryPatternUrl(u)) return undefined;
+
+            if (u.protocol === 'file:') {
+              patterns.add('file:///*');
+              return Array.from(patterns);
+            }
+
             // Use host-level wildcard to include all paths; we'll do precise selection later
             const pathWildcard = '/*';
 
@@ -153,10 +165,12 @@ class NavigateTool extends BaseBrowserToolExecutor {
             patterns.add(`${u.protocol}//${hostWithWww}${pathWildcard}`);
 
             // Add protocol variant to catch http↔https redirects
-            const altProtocol = u.protocol === 'https:' ? 'http:' : 'https:';
-            patterns.add(`${altProtocol}//${u.host}${pathWildcard}`);
-            patterns.add(`${altProtocol}//${hostNoWww}${pathWildcard}`);
-            patterns.add(`${altProtocol}//${hostWithWww}${pathWildcard}`);
+            if (u.protocol === 'http:' || u.protocol === 'https:') {
+              const altProtocol = u.protocol === 'https:' ? 'http:' : 'https:';
+              patterns.add(`${altProtocol}//${u.host}${pathWildcard}`);
+              patterns.add(`${altProtocol}//${hostNoWww}${pathWildcard}`);
+              patterns.add(`${altProtocol}//${hostWithWww}${pathWildcard}`);
+            }
           } else {
             patterns.add(input);
           }
@@ -168,11 +182,19 @@ class NavigateTool extends BaseBrowserToolExecutor {
       };
 
       const urlPatterns = buildUrlPatterns(url);
-      const candidateTabs = await chrome.tabs.query({ url: urlPatterns });
-      console.log(
-        `Found ${candidateTabs.length} matching tabs with patterns:`,
-        urlPatterns,
-      );
+      const candidateTabs = urlPatterns
+        ? await chrome.tabs.query({ url: urlPatterns })
+        : await chrome.tabs.query({});
+      if (urlPatterns) {
+        console.log(
+          `Found ${candidateTabs.length} matching tabs with patterns:`,
+          urlPatterns,
+        );
+      } else {
+        console.log(
+          `Found ${candidateTabs.length} tabs for exact URL comparison`,
+        );
+      }
 
       // Prefer strict match when user specifies a concrete path/query.
       // Only fall back to host-level activation when the target is site root.
@@ -183,6 +205,10 @@ class NavigateTool extends BaseBrowserToolExecutor {
         } catch {
           // Not a fully-qualified URL; cannot do structured comparison
           return tabsToPick[0];
+        }
+
+        if (!isChromeTabQueryPatternUrl(targetUrl)) {
+          return tabsToPick.find((tab) => tab.url === target);
         }
 
         const normalizePath = (p: string) => {
