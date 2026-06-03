@@ -20,16 +20,15 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "lint": "npx eslint 'src/**/*.{js,ts}'",
-    "lint:fix": "npx eslint 'src/**/*.{js,ts}' --fix",
-    "format": "prettier --write 'src/**/*.{js,ts,json}'"
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "format": "biome format --write src"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "@typescript-eslint/parser": "^8.32.0",
     "tsup": "^8.4.0"
   }
 }

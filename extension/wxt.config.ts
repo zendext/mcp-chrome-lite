@@ -1,0 +1,103 @@
+import tailwindcss from '@tailwindcss/vite';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { defineConfig } from 'wxt';
+
+config({ path: resolve(process.cwd(), '.env') });
+config({ path: resolve(process.cwd(), '.env.local') });
+
+const CHROME_EXTENSION_KEY = process.env.CHROME_EXTENSION_KEY;
+// Detect dev mode early for manifest-level switches
+const IS_DEV =
+  process.env.NODE_ENV !== 'production' && process.env.MODE !== 'production';
+
+// See https://wxt.dev/api/config.html
+export default defineConfig({
+  modules: ['@wxt-dev/module-solid'],
+  webExt: {
+    disabled: true,
+  },
+  manifest: {
+    // Use environment variable for the key, fallback to undefined if not set
+    key: CHROME_EXTENSION_KEY,
+    default_locale: 'zh_CN',
+    name: '__MSG_extensionName__',
+    description: '__MSG_extensionDescription__',
+    permissions: [
+      'tabs',
+      'activeTab',
+      'scripting',
+      'downloads',
+      'webRequest',
+      'webNavigation',
+      'debugger',
+      'storage',
+      'alarms',
+    ],
+    host_permissions: ['<all_urls>'],
+    action: {
+      default_popup: 'popup.html',
+      default_title: 'Chrome MCP Bridge',
+    },
+    web_accessible_resources: [
+      {
+        resources: [
+          '/inject-scripts/*', // 允许内容脚本注入的助手文件
+        ],
+        matches: ['<all_urls>'],
+      },
+    ],
+    // 注意：以下安全策略在开发环境会阻断 dev server 的资源加载，
+    // 只在生产环境启用，开发环境交由 WXT 默认策略处理。
+    ...(IS_DEV
+      ? {}
+      : {
+          cross_origin_embedder_policy: { value: 'require-corp' as const },
+          cross_origin_opener_policy: { value: 'same-origin' as const },
+          content_security_policy: {
+            // Allow inline styles injected by Vite (compiled CSS) and data images used in UI thumbnails
+            extension_pages:
+              "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;",
+          },
+        }),
+  },
+  vite: (env) => ({
+    plugins: [
+      // TailwindCSS v4 Vite plugin – no PostCSS config required
+      tailwindcss(),
+      // Ensure static assets are available as early as possible to avoid race conditions in dev
+      // Copy _locales/inject-scripts into the build output before other steps
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'inject-scripts/*.js',
+            dest: 'inject-scripts',
+          },
+          {
+            src: '_locales/**/*',
+            dest: '_locales',
+          },
+        ],
+        // Use writeBundle so outDir exists for dev and prod
+        hook: 'writeBundle',
+        // Enable watch so changes to these files are reflected during dev
+        watch: {
+          // Use default patterns inferred from targets; explicit true enables watching
+          // Vite plugin will watch src patterns and re-copy on change
+        } as any,
+      }) as any,
+    ],
+    build: {
+      // 我们的构建产物需要兼容到es6
+      target: 'es2015',
+      // 非生产环境下生成sourcemap
+      sourcemap: env.mode !== 'production',
+      // 禁用gzip 压缩大小报告，因为压缩大型文件可能会很慢
+      reportCompressedSize: false,
+      // chunk大小超过1500kb是触发警告
+      chunkSizeWarningLimit: 1500,
+      minify: false,
+    },
+  }),
+});

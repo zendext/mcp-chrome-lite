@@ -1,0 +1,29 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "paths": {
+      "@": ["."],
+      "@/*": ["./*"],
+      "~": ["."],
+      "~/*": ["./*"],
+      "@@": ["."],
+      "@@/*": ["./*"],
+      "~~": ["."],
+      "~~/*": ["./*"],
+      "mcp-chrome-lite-shared": ["../packages/shared/src/index.ts"]
+    }
+  },
+  "include": [
+    "env.d.ts",
+    "entrypoints/background/index.ts",
+    "entrypoints/popup/main.tsx",
+    "entrypoints/element-picker.content.ts",
+    "tests/lite/**/*.test.ts",
+    "tests/vitest.setup.ts",
+    "vitest.config.ts",
+    "wxt.config.ts"
+  ],
+  "exclude": [".output", "dist"]
+}

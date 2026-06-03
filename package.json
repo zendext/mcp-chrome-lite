@@ -6,44 +6,23 @@
   "type": "module",
   "scripts": {
     "build:shared": "pnpm --filter mcp-chrome-lite-shared build",
-    "build:native": "cd app/native-server && go build -o mcp-chrome-lite ./cmd/mcp-chrome-lite",
+    "build:server": "cd server && go build -o mcp-chrome-lite ./cmd/mcp-chrome-lite",
     "build:extension": "pnpm --filter mcp-chrome-lite-extension build",
-    "build": "pnpm run build:shared && pnpm run build:native && pnpm run build:extension",
+    "build": "pnpm run build:shared && pnpm run build:server && pnpm run build:extension",
     "dev:shared": "pnpm --filter mcp-chrome-lite-shared dev",
-    "dev:native": "cd app/native-server && go run ./cmd/mcp-chrome-lite",
+    "dev:server": "cd server && go run ./cmd/mcp-chrome-lite",
     "dev:extension": "pnpm --filter mcp-chrome-lite-extension dev",
-    "dev": "pnpm --filter mcp-chrome-lite-shared build && pnpm run dev:native & pnpm run dev:extension",
-    "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint:fix",
-    "format": "pnpm -r format",
+    "dev": "pnpm --filter mcp-chrome-lite-shared build && pnpm run dev:server & pnpm run dev:extension",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "clean:dist": "pnpm -r exec rm -rf dist .turbo",
     "clean:modules": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
     "clean": "npm run clean:dist && npm run clean:modules",
-    "typecheck": "pnpm -r exec tsc --noEmit && cd app/native-server && go test ./...",
-    "prepare": "husky"
+    "typecheck": "pnpm -r exec tsc --noEmit && cd server && go test ./..."
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
-    "@eslint/js": "^9.25.1",
-    "@typescript-eslint/eslint-plugin": "^8.32.0",
-    "@typescript-eslint/parser": "^8.32.0",
-    "eslint": "^9.26.0",
-    "eslint-config-prettier": "^10.1.5",
-    "globals": "^16.1.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.5.1",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.0"
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{json,md,yaml,html,css}": [
-      "prettier --write"
-    ]
+    "@biomejs/biome": "^2.4.16",
+    "typescript": "^5.8.3"
   }
 }
