@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import pluginVue from 'eslint-plugin-vue';
 import { defineConfig } from 'eslint/config';
 import prettierConfig from 'eslint-config-prettier';
 
@@ -33,7 +32,7 @@ export default defineConfig([
   },
   js.configs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs,ts,vue}'],
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -49,8 +48,6 @@ export default defineConfig([
       'no-empty': 'off',
     },
   },
-  pluginVue.configs['flat/essential'],
-  { files: ['**/*.vue'], languageOptions: { parserOptions: { parser: tseslint.parser } } },
   // Prettier configuration - must be placed last to override previous rules
   prettierConfig,
 ]);

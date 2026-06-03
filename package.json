@@ -1,27 +1,25 @@
 {
-  "name": "mcp-chrome-bridge-monorepo",
-  "version": "1.0.0",
+  "name": "mcp-chrome-lite",
+  "version": "0.1.0",
   "private": true,
-  "author": "hangye",
+  "author": "zendext",
   "type": "module",
   "scripts": {
-    "build:shared": "pnpm --filter chrome-mcp-shared build",
-    "build:native": "pnpm --filter mcp-chrome-bridge build",
-    "build:extension": "pnpm --filter chrome-mcp-server build",
-    "build:wasm": "pnpm --filter @chrome-mcp/wasm-simd build && pnpm run copy:wasm",
-    "build": "pnpm -r --filter='!@chrome-mcp/wasm-simd' build",
-    "copy:wasm": "cp ./packages/wasm-simd/pkg/simd_math.js ./packages/wasm-simd/pkg/simd_math_bg.wasm ./app/chrome-extension/workers/",
-    "dev:shared": "pnpm --filter chrome-mcp-shared dev",
-    "dev:native": "pnpm --filter mcp-chrome-bridge dev",
-    "dev:extension": "pnpm --filter chrome-mcp-server dev",
-    "dev": "pnpm --filter chrome-mcp-shared build && pnpm -r --parallel dev",
+    "build:shared": "pnpm --filter mcp-chrome-lite-shared build",
+    "build:native": "cd app/native-server && go build -o mcp-chrome-lite ./cmd/mcp-chrome-lite",
+    "build:extension": "pnpm --filter mcp-chrome-lite-extension build",
+    "build": "pnpm run build:shared && pnpm run build:native && pnpm run build:extension",
+    "dev:shared": "pnpm --filter mcp-chrome-lite-shared dev",
+    "dev:native": "cd app/native-server && go run ./cmd/mcp-chrome-lite",
+    "dev:extension": "pnpm --filter mcp-chrome-lite-extension dev",
+    "dev": "pnpm --filter mcp-chrome-lite-shared build && pnpm run dev:native & pnpm run dev:extension",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "format": "pnpm -r format",
     "clean:dist": "pnpm -r exec rm -rf dist .turbo",
     "clean:modules": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
     "clean": "npm run clean:dist && npm run clean:modules",
-    "typecheck": "pnpm -r exec tsc --noEmit",
+    "typecheck": "pnpm -r exec tsc --noEmit && cd app/native-server && go test ./...",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -32,17 +30,15 @@
     "@typescript-eslint/parser": "^8.32.0",
     "eslint": "^9.26.0",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-vue": "^10.0.0",
     "globals": "^16.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.0",
-    "vue-eslint-parser": "^10.1.3"
+    "typescript-eslint": "^8.32.0"
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,vue}": [
+    "**/*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],

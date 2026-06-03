@@ -1,6 +1,6 @@
 import { createErrorResponse, ToolResult } from '@/common/tool-handler';
 import { BaseBrowserToolExecutor } from '../base-browser';
-import { TOOL_NAMES } from 'chrome-mcp-shared';
+import { TOOL_NAMES } from 'mcp-chrome-lite-shared';
 import { LIMITS, NETWORK_FILTERS } from '@/common/constants';
 
 // Static resource file extensions
@@ -349,7 +349,7 @@ class NetworkCaptureStartTool extends BaseBrowserToolExecutor {
    */
   private setupListeners(): void {
     // Skip if listeners are already set up
-    if (this.listeners.onBeforeRequest) {
+    if (Object.prototype.hasOwnProperty.call(this.listeners, 'onBeforeRequest')) {
       return;
     }
 
