@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { defineConfig } from 'wxt';
+import { injectScriptsPlugin } from './build/inject-scripts-plugin';
 
 config({ path: resolve(process.cwd(), '.env') });
 config({ path: resolve(process.cwd(), '.env.local') });
@@ -66,14 +67,11 @@ export default defineConfig({
     plugins: [
       // TailwindCSS v4 Vite plugin – no PostCSS config required
       tailwindcss(),
-      // Ensure static assets are available as early as possible to avoid race conditions in dev
-      // Copy _locales/inject-scripts into the build output before other steps
+      injectScriptsPlugin(),
+      // Ensure static assets are available as early as possible to avoid race conditions in dev.
+      // Copy _locales into the build output before other steps.
       viteStaticCopy({
         targets: [
-          {
-            src: 'inject-scripts/*.js',
-            dest: 'inject-scripts',
-          },
           {
             src: '_locales/**/*',
             dest: '_locales',

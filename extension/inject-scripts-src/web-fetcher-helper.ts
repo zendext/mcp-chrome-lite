@@ -2801,11 +2801,6 @@ if (window.__WEB_FETCHER_HELPER_INITIALIZED__) {
     },
   };
 
-  if (typeof module === 'object') {
-    /* global module */
-    module.exports = Readability;
-  }
-
   /**
    * Web Fetcher Helper Content Script
    * Handles fetching HTML content, text content, and interactive elements from the current page
