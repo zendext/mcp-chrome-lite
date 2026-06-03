@@ -81,8 +81,7 @@ pnpm --filter mcp-chrome-lite-extension test
 Build the local server binary:
 
 ```bash
-cd app/native-server
-go build -o mcp-chrome-lite ./cmd/mcp-chrome-lite
+pnpm run build:server
 ```
 
 Build the extension:

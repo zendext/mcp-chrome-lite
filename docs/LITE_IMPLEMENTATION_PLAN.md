@@ -8,7 +8,7 @@
 
 ## Phase 2: Go MCP Server
 
-- Create a Go module under `app/native-server`.
+- Create a Go module under `server`.
 - Implement retained tool metadata in Go.
 - Implement an extension bridge that accepts one active WebSocket connection.
 - Implement stdio MCP server startup.
@@ -27,7 +27,7 @@
 
 ## Phase 4: Cleanup
 
-- Remove Node native-server scripts and dependencies.
+- Remove the old Node server scripts and dependencies.
 - Remove legacy UI and model/workflow dependencies from the extension package.
 - Simplify root scripts to build the shared package, Go server, and extension.
 - Keep only unit tests and manual smoke instructions.

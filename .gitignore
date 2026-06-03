@@ -17,7 +17,6 @@ dist
 
 # Editor directories and files
 .vscode/*
-!.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
@@ -31,6 +30,9 @@ dist
 .env
 .env.local
 .env.*.local
+
+# Local build outputs
+server/mcp-chrome-lite
 
 # Prevent npm metadata pollution
 false/
