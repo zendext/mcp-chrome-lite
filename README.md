@@ -7,7 +7,7 @@ Chrome extension is displayed as **Chrome MCP Bridge**.
 
 Download these assets from the latest GitHub release:
 
-- `mcp-chrome-lite-extension-0.1.0-chrome.zip`
+- `mcp-chrome-lite-extension-0.1.1-chrome.zip`
 - `mcp-chrome-lite-linux-amd64`
 - or `mcp-chrome-lite-darwin-arm64`
 
@@ -28,7 +28,7 @@ mv mcp-chrome-lite-darwin-arm64 ~/.local/bin/mcp-chrome-lite
 Install the Chrome extension:
 
 ```bash
-unzip mcp-chrome-lite-extension-0.1.0-chrome.zip -d chrome-mcp-bridge
+unzip mcp-chrome-lite-extension-0.1.1-chrome.zip -d chrome-mcp-bridge
 ```
 
 Then open `chrome://extensions`, enable Developer mode, choose **Load
