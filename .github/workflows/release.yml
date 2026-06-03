@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.1.0"
+        required: true
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: app/native-server/go.sum
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test extension and server
+        run: |
+          pnpm --filter mcp-chrome-lite-extension test
+          cd app/native-server
+          go test ./...
+
+      - name: Build extension zip
+        run: pnpm --filter mcp-chrome-lite-extension zip
+
+      - name: Build Go binaries
+        run: |
+          mkdir -p dist
+          cd app/native-server
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../../dist/mcp-chrome-lite-linux-amd64 ./cmd/mcp-chrome-lite
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../../dist/mcp-chrome-lite-darwin-arm64 ./cmd/mcp-chrome-lite
+
+      - name: Collect extension asset
+        run: |
+          cp app/chrome-extension/.output/mcp-chrome-lite-extension-*-chrome.zip dist/
+          ls -lh dist
+
+      - name: Write release notes
+        run: |
+          EXTENSION_ZIP="$(basename "$(ls dist/mcp-chrome-lite-extension-*-chrome.zip)")"
+          cat > dist/RELEASE_NOTES.md <<EOF
+          ## Assets
+
+          - \`${EXTENSION_ZIP}\`: Chrome extension package.
+          - \`mcp-chrome-lite-linux-amd64\`: Linux amd64 MCP server binary.
+          - \`mcp-chrome-lite-darwin-arm64\`: macOS Apple Silicon MCP server binary.
+
+          See `README.md` for installation and Codex MCP configuration.
+          EOF
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          gh release create "$TAG_NAME" \
+            dist/mcp-chrome-lite-extension-*-chrome.zip \
+            dist/mcp-chrome-lite-linux-amd64 \
+            dist/mcp-chrome-lite-darwin-arm64 \
+            --target "$GITHUB_SHA" \
+            --title "$TAG_NAME" \
+            --notes-file dist/RELEASE_NOTES.md

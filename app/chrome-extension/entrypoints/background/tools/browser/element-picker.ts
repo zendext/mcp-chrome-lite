@@ -15,7 +15,7 @@ import {
   type ElementPickerResult,
   type ElementPickerResultItem,
   type PickedElement,
-} from 'chrome-mcp-shared';
+} from 'mcp-chrome-lite-shared';
 
 // ============================================================
 // Types

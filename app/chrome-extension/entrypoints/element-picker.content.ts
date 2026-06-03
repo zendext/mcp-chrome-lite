@@ -1,7 +1,7 @@
 /**
  * Element Picker Content Script
  *
- * Renders the Element Picker Panel UI (Quick Panel style) and forwards UI events
+ * Renders the Element Picker Panel UI and forwards UI events
  * to background while a chrome_request_element_selection session is active.
  *
  * This script only runs in the top frame and handles:
@@ -15,8 +15,9 @@ import {
   type ElementPickerController,
   type ElementPickerUiState,
 } from '@/shared/element-picker';
+import { defineContentScript } from 'wxt/utils/define-content-script';
 import { BACKGROUND_MESSAGE_TYPES, TOOL_MESSAGE_TYPES } from '@/common/message-types';
-import type { PickedElement } from 'chrome-mcp-shared';
+import type { PickedElement } from 'mcp-chrome-lite-shared';
 
 // ============================================================
 // Message Types

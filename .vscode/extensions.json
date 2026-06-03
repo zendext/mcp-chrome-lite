@@ -1,3 +1,6 @@
 {
-  "recommendations": ["Vue.volar"]
+  "recommendations": [
+    "solidjs-community.solid-snippets",
+    "golang.go"
+  ]
 }

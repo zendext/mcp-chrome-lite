@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url));
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
 export default defineConfig({
   resolve: {
@@ -10,13 +11,12 @@ export default defineConfig({
       // Match WXT's path aliases from .wxt/tsconfig.json
       '@': rootDir,
       '~': rootDir,
-      // Mock hnswlib-wasm-static to avoid native module issues in tests
-      'hnswlib-wasm-static': `${rootDir}/tests/__mocks__/hnswlib-wasm-static.ts`,
+      'mcp-chrome-lite-shared': `${repoRoot}/packages/shared/src/index.ts`,
     },
   },
   test: {
     environment: 'jsdom',
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/lite/**/*.test.ts'],
     exclude: ['node_modules', '.output', 'dist', '.wxt'],
     setupFiles: ['tests/vitest.setup.ts'],
     environmentOptions: {
@@ -28,9 +28,8 @@ export default defineConfig({
     // Auto-cleanup mocks between tests
     clearMocks: true,
     restoreMocks: true,
-    // TypeScript support via esbuild (faster than ts-jest)
     typecheck: {
-      enabled: false, // Run separately with vue-tsc
+      enabled: false,
     },
   },
 });

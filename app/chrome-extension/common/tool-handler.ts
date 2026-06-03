@@ -1,6 +1,15 @@
-import type { CallToolResult, TextContent, ImageContent } from '@modelcontextprotocol/sdk/types.js';
+export interface TextContent {
+  type: 'text';
+  text: string;
+}
 
-export interface ToolResult extends CallToolResult {
+export interface ImageContent {
+  type: 'image';
+  data: string;
+  mimeType: string;
+}
+
+export interface ToolResult {
   content: (TextContent | ImageContent)[];
   isError: boolean;
 }

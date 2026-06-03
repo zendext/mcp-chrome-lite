@@ -1,131 +1,68 @@
-// indexeddb-client.ts
-// Generic IndexedDB client with robust transaction handling and small helpers.
-
-export type UpgradeHandler = (
-  db: IDBDatabase,
-  oldVersion: number,
-  tx: IDBTransaction | null,
-) => void;
+type UpgradeCallback = (db: IDBDatabase, oldVersion: number, newVersion: number | null) => void;
 
 export class IndexedDbClient {
   private dbPromise: Promise<IDBDatabase> | null = null;
 
   constructor(
-    private name: string,
-    private version: number,
-    private onUpgrade: UpgradeHandler,
+    private readonly name: string,
+    private readonly version: number,
+    private readonly onUpgrade?: UpgradeCallback,
   ) {}
 
-  async openDb(): Promise<IDBDatabase> {
+  private open(): Promise<IDBDatabase> {
     if (this.dbPromise) return this.dbPromise;
-    this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open(this.name, this.version);
-      req.onupgradeneeded = (event) => {
-        const db = req.result;
-        const oldVersion = (event as IDBVersionChangeEvent).oldVersion || 0;
-        const tx = req.transaction as IDBTransaction | null;
-        try {
-          this.onUpgrade(db, oldVersion, tx);
-        } catch (e) {
-          console.error('IndexedDbClient upgrade failed:', e);
-        }
+
+    this.dbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.name, this.version);
+
+      request.onupgradeneeded = (event) => {
+        this.onUpgrade?.(request.result, event.oldVersion, request.transaction?.db.version ?? null);
       };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () =>
-        reject(new Error(`IndexedDB open failed: ${req.error?.message || req.error}`));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error(`Failed to open ${this.name}`));
     });
+
     return this.dbPromise;
   }
 
-  async tx<T>(
-    storeName: string,
-    mode: IDBTransactionMode,
-    op: (store: IDBObjectStore, txn: IDBTransaction) => T | Promise<T>,
-  ): Promise<T> {
-    const db = await this.openDb();
-    return new Promise<T>((resolve, reject) => {
-      const transaction = db.transaction(storeName, mode);
-      const st = transaction.objectStore(storeName);
-      let opResult: T | undefined;
-      let opError: any;
-      transaction.oncomplete = () => resolve(opResult as T);
-      transaction.onerror = () =>
-        reject(
-          new Error(
-            `IDB transaction error on ${storeName}: ${transaction.error?.message || transaction.error}`,
-          ),
-        );
-      transaction.onabort = () =>
-        reject(
-          new Error(
-            `IDB transaction aborted on ${storeName}: ${transaction.error?.message || opError || 'unknown'}`,
-          ),
-        );
-      Promise.resolve()
-        .then(() => op(st, transaction))
-        .then((res) => {
-          opResult = res as T;
-        })
-        .catch((err) => {
-          opError = err;
-          try {
-            transaction.abort();
-          } catch {}
-        });
+  private async store(storeName: string, mode: IDBTransactionMode): Promise<IDBObjectStore> {
+    const db = await this.open();
+    return db.transaction(storeName, mode).objectStore(storeName);
+  }
+
+  async get<T>(storeName: string, key: IDBValidKey): Promise<T | undefined> {
+    const store = await this.store(storeName, 'readonly');
+    return new Promise((resolve, reject) => {
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result as T | undefined);
+      request.onerror = () => reject(request.error || new Error('IndexedDB get failed'));
     });
   }
 
-  async getAll<T>(store: string): Promise<T[]> {
-    return this.tx<T[]>(store, 'readonly', (st) =>
-      this.promisifyRequest<any[]>(st.getAll(), store, 'getAll').then((res) => (res as T[]) || []),
-    );
-  }
-
-  async get<T>(store: string, key: IDBValidKey): Promise<T | undefined> {
-    return this.tx<T | undefined>(store, 'readonly', (st) =>
-      this.promisifyRequest<T | undefined>(st.get(key), store, `get(${String(key)})`).then(
-        (res) => res as any,
-      ),
-    );
-  }
-
-  async put<T>(store: string, value: T): Promise<void> {
-    return this.tx<void>(store, 'readwrite', (st) =>
-      this.promisifyRequest<any>(st.put(value as any), store, 'put').then(() => undefined),
-    );
-  }
-
-  async delete(store: string, key: IDBValidKey): Promise<void> {
-    return this.tx<void>(store, 'readwrite', (st) =>
-      this.promisifyRequest<any>(st.delete(key), store, `delete(${String(key)})`).then(
-        () => undefined,
-      ),
-    );
-  }
-
-  async clear(store: string): Promise<void> {
-    return this.tx<void>(store, 'readwrite', (st) =>
-      this.promisifyRequest<any>(st.clear(), store, 'clear').then(() => undefined),
-    );
-  }
-
-  async putMany<T>(store: string, values: T[]): Promise<void> {
-    return this.tx<void>(store, 'readwrite', async (st) => {
-      for (const v of values) st.put(v as any);
-      return;
+  async getAll<T>(storeName: string): Promise<T[]> {
+    const store = await this.store(storeName, 'readonly');
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result as T[]);
+      request.onerror = () => reject(request.error || new Error('IndexedDB getAll failed'));
     });
   }
 
-  // Expose helper for advanced callers if needed
-  promisifyRequest<R>(req: IDBRequest<R>, store: string, action: string): Promise<R> {
-    return new Promise<R>((resolve, reject) => {
-      req.onsuccess = () => resolve(req.result as R);
-      req.onerror = () =>
-        reject(
-          new Error(
-            `IDB ${action} error on ${store}: ${(req.error as any)?.message || (req.error as any)}`,
-          ),
-        );
+  async put<T>(storeName: string, value: T): Promise<void> {
+    const store = await this.store(storeName, 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.put(value);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error || new Error('IndexedDB put failed'));
+    });
+  }
+
+  async delete(storeName: string, key: IDBValidKey): Promise<void> {
+    const store = await this.store(storeName, 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error || new Error('IndexedDB delete failed'));
     });
   }
 }
