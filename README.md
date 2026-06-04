@@ -108,6 +108,20 @@ Build the local server binary:
 pnpm run build:server
 ```
 
+The Go MCP server is a nested Go module under `server/`. If you build or run it
+manually with `go`, change into that directory first:
+
+```bash
+cd server
+go run ./cmd/mcp-chrome-lite/main.go
+go build -o mcp-chrome-lite ./cmd/mcp-chrome-lite
+go test ./...
+```
+
+From the repository root, prefer the pnpm scripts. Running
+`go run ./server/cmd/mcp-chrome-lite/main.go` directly from the root is not
+supported unless you create your own local Go workspace.
+
 Build the extension:
 
 ```bash
