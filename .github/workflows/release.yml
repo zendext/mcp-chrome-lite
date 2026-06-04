@@ -58,6 +58,7 @@ jobs:
           cd server
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/mcp-chrome-lite-linux-amd64 ./cmd/mcp-chrome-lite
           CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../dist/mcp-chrome-lite-darwin-arm64 ./cmd/mcp-chrome-lite
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/mcp-chrome-lite-windows-amd64.exe ./cmd/mcp-chrome-lite
 
       - name: Collect extension asset
         run: |
@@ -73,6 +74,7 @@ jobs:
           - \`${EXTENSION_ZIP}\`: Chrome extension package.
           - \`mcp-chrome-lite-linux-amd64\`: Linux amd64 MCP server binary.
           - \`mcp-chrome-lite-darwin-arm64\`: macOS Apple Silicon MCP server binary.
+          - \`mcp-chrome-lite-windows-amd64.exe\`: Windows amd64 MCP server executable.
 
           See `README.md` for installation and Codex MCP configuration.
           EOF
@@ -86,6 +88,7 @@ jobs:
             dist/mcp-chrome-lite-extension-*-chrome.zip \
             dist/mcp-chrome-lite-linux-amd64 \
             dist/mcp-chrome-lite-darwin-arm64 \
+            dist/mcp-chrome-lite-windows-amd64.exe \
             --target "$GITHUB_SHA" \
             --title "$TAG_NAME" \
             --notes-file dist/RELEASE_NOTES.md

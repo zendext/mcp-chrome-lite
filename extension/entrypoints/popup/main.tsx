@@ -150,9 +150,6 @@ function Popup() {
         <button type="button" onClick={connect}>
           Connect
         </button>
-        <button type="button" onClick={refresh}>
-          Refresh
-        </button>
         <button type="button" onClick={copyConfig}>
           Copy MCP config
         </button>

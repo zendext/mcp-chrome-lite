@@ -3,15 +3,20 @@
 `mcp-chrome-lite` provides a small Chrome MCP bridge for local code agents. The
 Chrome extension is displayed as **Chrome MCP Bridge**.
 
+This repository is forked from the original Chrome MCP project, but it keeps only
+the core local bridge functionality and uses a different architecture: a Go MCP
+server talks to a lightweight Chrome extension over a local WebSocket.
+
 ## Install From Release
 
 Download these assets from the latest GitHub release:
 
-- `mcp-chrome-lite-extension-0.1.1-chrome.zip`
+- `mcp-chrome-lite-extension-*-chrome.zip`
 - `mcp-chrome-lite-linux-amd64`
-- or `mcp-chrome-lite-darwin-arm64`
+- `mcp-chrome-lite-darwin-arm64`
+- `mcp-chrome-lite-windows-amd64.exe`
 
-Install the server binary:
+Install the Go MCP server binary:
 
 ```bash
 chmod +x mcp-chrome-lite-linux-amd64
@@ -25,14 +30,19 @@ chmod +x mcp-chrome-lite-darwin-arm64
 mv mcp-chrome-lite-darwin-arm64 ~/.local/bin/mcp-chrome-lite
 ```
 
-Install the Chrome extension:
+Windows should also work in theory. Put the executable somewhere stable, such as
+`%USERPROFILE%\go\bin\mcp-chrome-lite.exe`, and make sure that directory is on
+`PATH`. You can also point Codex directly at the absolute `.exe` path.
 
-```bash
-unzip mcp-chrome-lite-extension-0.1.1-chrome.zip -d chrome-mcp-bridge
+Install the Chrome extension by opening `chrome://extensions`, enabling
+Developer mode, and dragging the extension zip onto the extensions page:
+
+```text
+mcp-chrome-lite-extension-*-chrome.zip
 ```
 
-Then open `chrome://extensions`, enable Developer mode, choose **Load
-unpacked**, and select the `chrome-mcp-bridge` directory.
+If Chrome does not accept the zip on your machine, unzip it, choose **Load
+unpacked**, and select the extracted directory.
 
 ## Codex Configuration
 
@@ -44,6 +54,20 @@ command = "/home/you/.local/bin/mcp-chrome-lite"
 ```
 
 Use the real absolute path for your machine.
+
+On Windows, use either a `PATH` entry:
+
+```toml
+[mcp_servers.chrome-mcp-bridge]
+command = "mcp-chrome-lite.exe"
+```
+
+or the absolute executable path:
+
+```toml
+[mcp_servers.chrome-mcp-bridge]
+command = 'C:\Users\you\go\bin\mcp-chrome-lite.exe'
+```
 
 ## Connect Chrome
 
