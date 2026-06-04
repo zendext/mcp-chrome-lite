@@ -7,6 +7,22 @@ This repository is forked from the original Chrome MCP project, but it keeps onl
 the core local bridge functionality and uses a different architecture: a Go MCP
 server talks to a lightweight Chrome extension over a local WebSocket.
 
+## Install With Codex
+
+You can ask Codex to install the local MCP server from the latest GitHub
+release. Copy this prompt into Codex:
+
+```text
+Install mcp-chrome-lite from https://github.com/zendext/mcp-chrome-lite/releases/latest.
+
+Download the correct MCP server binary for my OS and architecture, put it in a stable local bin directory, make it executable if needed, and add it to my Codex MCP config as chrome-mcp-bridge.
+
+Also download the Chrome extension zip, but do not try to install it automatically. After downloading it, tell me exactly where the zip is and guide me to open chrome://extensions, enable Developer mode, and drag the zip onto the page. If Chrome does not accept the zip, unzip it and tell me to use Load unpacked.
+```
+
+Codex can install and configure the Go MCP server, but Chrome extension
+installation still requires a browser-side confirmation step.
+
 ## Install From Release
 
 Download these assets from the latest GitHub release:
