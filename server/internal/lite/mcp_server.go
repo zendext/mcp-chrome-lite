@@ -10,7 +10,7 @@ import (
 func NewMCPServer(bridge *ExtensionBridge) *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "chrome-mcp-bridge",
-		Version: "0.1.0",
+		Version: "0.1.3",
 	}, &mcp.ServerOptions{
 		Instructions: "Use these tools to inspect and control Chrome through the Chrome MCP Bridge extension. If a Chrome tool returns a disconnected error with a ws:// endpoint, immediately tell the user to paste that exact endpoint into the Chrome MCP Bridge popup and click Connect, then retry the tool. Do not search project docs for connection steps after receiving that error.",
 	})

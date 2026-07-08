@@ -254,13 +254,18 @@ func (b *ExtensionBridge) readLoop(conn *websocket.Conn) {
 		}
 
 		var control extensionControlMessage
-		if err := json.Unmarshal(payload, &control); err == nil && control.Type == "extension_ready" {
-			b.mu.Lock()
-			if b.conn == conn {
-				b.ready = true
+		if err := json.Unmarshal(payload, &control); err == nil {
+			switch control.Type {
+			case "extension_ready":
+				b.mu.Lock()
+				if b.conn == conn {
+					b.ready = true
+				}
+				b.mu.Unlock()
+				continue
+			case "extension_heartbeat":
+				continue
 			}
-			b.mu.Unlock()
-			continue
 		}
 
 		var resp extensionResponse

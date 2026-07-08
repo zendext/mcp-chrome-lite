@@ -16,14 +16,19 @@ const STORAGE_KEY = 'mcpChromeLiteConnection';
 const ENDPOINT_STORAGE_KEY = 'mcpChromeLiteEndpoint';
 const HOST_STORAGE_KEY = 'mcpChromeLiteHost';
 const PORT_STORAGE_KEY = 'mcpChromeLitePort';
+const RECONNECT_DELAY_MS = 2000;
+const HEARTBEAT_INTERVAL_MS = 20000;
 
 let socket: WebSocket | null = null;
 let currentEndpoint = buildWsEndpoint(DEFAULT_WS_PORT, DEFAULT_WS_HOST);
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
 export function initLiteWebSocketClient(): void {
   void loadEndpoint().then((endpoint) => {
     currentEndpoint = endpoint;
     void updateStatus(false, currentEndpoint);
+    connect();
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -139,23 +144,41 @@ function connect(): void {
     return;
   }
 
-  socket = new WebSocket(currentEndpoint);
+  clearReconnectTimer();
 
-  socket.addEventListener('open', () => {
-    socket?.send(JSON.stringify({ type: 'extension_ready' }));
+  const activeSocket = new WebSocket(currentEndpoint);
+  socket = activeSocket;
+
+  activeSocket.addEventListener('open', () => {
+    if (socket !== activeSocket) {
+      return;
+    }
+    activeSocket.send(JSON.stringify({ type: 'extension_ready' }));
+    startHeartbeat();
     void updateStatus(true, currentEndpoint);
   });
 
-  socket.addEventListener('message', (event) => {
+  activeSocket.addEventListener('message', (event) => {
+    if (socket !== activeSocket) {
+      return;
+    }
     void handleServerMessage(event.data);
   });
 
-  socket.addEventListener('close', () => {
+  activeSocket.addEventListener('close', () => {
+    if (socket !== activeSocket) {
+      return;
+    }
     socket = null;
+    stopHeartbeat();
     void updateStatus(false, currentEndpoint);
+    scheduleReconnect();
   });
 
-  socket.addEventListener('error', () => {
+  activeSocket.addEventListener('error', () => {
+    if (socket !== activeSocket) {
+      return;
+    }
     void updateStatus(false, currentEndpoint);
   });
 }
@@ -223,11 +246,56 @@ function isValidPort(port: number): boolean {
 }
 
 function reconnect(): void {
+  clearReconnectTimer();
+  stopHeartbeat();
   if (socket) {
     socket.close();
     socket = null;
   }
   connect();
+}
+
+function scheduleReconnect(): void {
+  if (reconnectTimer) {
+    return;
+  }
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect();
+  }, RECONNECT_DELAY_MS);
+}
+
+function clearReconnectTimer(): void {
+  if (!reconnectTimer) {
+    return;
+  }
+  clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+}
+
+function startHeartbeat(): void {
+  stopHeartbeat();
+  heartbeatTimer = setInterval(() => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      stopHeartbeat();
+      return;
+    }
+
+    socket.send(
+      JSON.stringify({
+        type: 'extension_heartbeat',
+        ts: Date.now(),
+      }),
+    );
+  }, HEARTBEAT_INTERVAL_MS);
+}
+
+function stopHeartbeat(): void {
+  if (!heartbeatTimer) {
+    return;
+  }
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
 }
 
 async function updateStatus(
